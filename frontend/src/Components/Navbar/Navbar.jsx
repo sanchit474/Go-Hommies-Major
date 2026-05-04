@@ -91,6 +91,7 @@ const Navbar = () => {
     { name: "Explore", path: "/" },
     { name: "Find", path: "/createpost", icon: <Plus size={14} /> },
     { name: "Community", path: "/posts" },
+    { name: "Trip Planner", path: "/trip-planner" },
   ];
 
   const handleNav = (path) => {

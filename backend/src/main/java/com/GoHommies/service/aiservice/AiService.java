@@ -63,6 +63,120 @@ public class AiService {
             .connectTimeout(Duration.ofSeconds(20))
             .build();
 
+    public String buildDetailedItinerary(Map<String, Object> payload) {
+        if (payload == null) payload = Map.of();
+
+        String destination  = getString(payload, "destination", "");
+        String startDate    = getString(payload, "startDate", "");
+        String endDate      = getString(payload, "endDate", "");
+        String budget       = getString(payload, "budget", "");
+        String preferences  = getString(payload, "preferences", "");
+        int travelers       = getInt(payload, "travelers", 1);
+
+        Object interestsRaw = payload.get("interests");
+        String interests = "";
+        if (interestsRaw instanceof List<?> list) {
+            interests = list.stream().map(Object::toString).collect(Collectors.joining(", "));
+        } else if (interestsRaw instanceof String s) {
+            interests = s;
+        }
+
+        if (destination.isBlank()) {
+            return "Please provide a destination so I can plan your trip.";
+        }
+
+        // Calculate number of days if dates provided
+        String daysInfo = "";
+        if (!startDate.isBlank() && !endDate.isBlank()) {
+            try {
+                java.time.LocalDate start = java.time.LocalDate.parse(startDate);
+                java.time.LocalDate end   = java.time.LocalDate.parse(endDate);
+                long days = java.time.temporal.ChronoUnit.DAYS.between(start, end);
+                if (days > 0) daysInfo = days + " days (" + startDate + " to " + endDate + ")";
+            } catch (Exception ignored) {}
+        }
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are a professional travel planner. Create a detailed, realistic, day-by-day travel itinerary.\n\n");
+        prompt.append("TRIP DETAILS:\n");
+        prompt.append("• Destination: ").append(destination).append("\n");
+        if (!daysInfo.isBlank())    prompt.append("• Duration: ").append(daysInfo).append("\n");
+        else if (!startDate.isBlank()) prompt.append("• Start Date: ").append(startDate).append("\n");
+        prompt.append("• Travelers: ").append(travelers).append(" person(s)\n");
+        if (!budget.isBlank())      prompt.append("• Budget: ").append(budget).append("\n");
+        if (!interests.isBlank())   prompt.append("• Interests: ").append(interests).append("\n");
+        if (!preferences.isBlank()) prompt.append("• Special Preferences: ").append(preferences).append("\n");
+        prompt.append("\nFORMAT YOUR RESPONSE EXACTLY LIKE THIS:\n");
+        prompt.append("📍 TRIP OVERVIEW\n[2-3 sentence summary of the trip]\n\n");
+        prompt.append("🗓️ DAY-BY-DAY ITINERARY\n\n");
+        prompt.append("Day 1 – [Theme/Title]\n");
+        prompt.append("🌅 Morning: [Activity + tip]\n");
+        prompt.append("☀️ Afternoon: [Activity + tip]\n");
+        prompt.append("🌙 Evening: [Activity + dinner suggestion]\n");
+        prompt.append("🏨 Stay: [Accommodation suggestion]\n\n");
+        prompt.append("[Continue for each day...]\n\n");
+        prompt.append("💰 BUDGET BREAKDOWN\n[Estimated costs per category]\n\n");
+        prompt.append("🚗 TRANSPORT TIPS\n[How to get around]\n\n");
+        prompt.append("💡 PRO TIPS\n[3-4 practical tips specific to this destination]");
+
+        String llmResponse = generateWithFallback(prompt.toString());
+        if (!llmResponse.isBlank()) {
+            return llmResponse;
+        }
+
+        // Rich fallback when AI is unavailable
+        return buildFallbackItinerary(destination, budget, interests, travelers);
+    }
+
+    private String buildFallbackItinerary(String destination, String budget, String interests, int travelers) {
+        return "📍 TRIP OVERVIEW\n"
+                + "A well-rounded trip to " + destination + " for " + travelers + " traveller(s)."
+                + (!budget.isBlank() ? " Budget: " + budget + "." : "") + "\n\n"
+                + "🗓️ DAY-BY-DAY ITINERARY\n\n"
+                + "Day 1 – Arrival & First Impressions\n"
+                + "🌅 Morning: Arrive, check in, freshen up.\n"
+                + "☀️ Afternoon: Walk around the main market or city centre. Try local street food.\n"
+                + "🌙 Evening: Dinner at a well-rated local restaurant. Early rest.\n"
+                + "🏨 Stay: Mid-range hotel near the city centre.\n\n"
+                + "Day 2 – Key Attractions\n"
+                + "🌅 Morning: Visit the most iconic landmark or heritage site.\n"
+                + "☀️ Afternoon: Local museum, art gallery, or cultural experience.\n"
+                + "🌙 Evening: Sunset viewpoint or rooftop café.\n"
+                + "🏨 Stay: Same hotel.\n\n"
+                + "Day 3 – Nature & Adventure\n"
+                + "🌅 Morning: Day trip to a nearby natural attraction (hills, beach, or forest).\n"
+                + "☀️ Afternoon: " + (interests.isBlank() ? "Hiking, photography, or a scenic drive." : interests.split(",")[0].trim() + " activity.") + "\n"
+                + "🌙 Evening: Return, local dinner, souvenir shopping.\n"
+                + "🏨 Stay: Same hotel.\n\n"
+                + "Day 4 – Leisure & Departure\n"
+                + "🌅 Morning: Café breakfast, last-minute shopping.\n"
+                + "☀️ Afternoon: Depart.\n\n"
+                + "💰 BUDGET BREAKDOWN\n"
+                + "• Accommodation: ~40% of budget\n"
+                + "• Transport: ~20% of budget\n"
+                + "• Food: ~25% of budget\n"
+                + "• Activities & Shopping: ~15% of budget\n\n"
+                + "🚗 TRANSPORT TIPS\n"
+                + "Use local auto-rickshaws or app cabs for short distances. Book intercity travel in advance.\n\n"
+                + "💡 PRO TIPS\n"
+                + "• Book accommodation at least 3 days in advance.\n"
+                + "• Carry cash for local markets and street food.\n"
+                + "• Check local weather before packing.\n"
+                + "• Download offline maps for " + destination + " before you leave.\n\n"
+                + "⚠️ Note: This is a template itinerary. For a fully AI-personalised plan, the AI service will be available shortly.";
+    }
+
+    private String getString(Map<String, Object> map, String key, String defaultVal) {
+        Object val = map.get(key);
+        return val == null ? defaultVal : val.toString().trim();
+    }
+
+    private int getInt(Map<String, Object> map, String key, int defaultVal) {
+        Object val = map.get(key);
+        if (val == null) return defaultVal;
+        try { return Integer.parseInt(val.toString()); } catch (Exception e) { return defaultVal; }
+    }
+
     public String buildTripPlanningResponse(String message) {
         String query = Optional.ofNullable(message).orElse("").trim();
         List<TripResponseDto> publicTrips = safePublicTrips();
@@ -210,6 +324,7 @@ public class AiService {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("model", openAiModel);
             payload.put("temperature", 0.7);
+            payload.put("max_tokens", 2048);
             payload.put("messages", List.of(
                     Map.of("role", "system", "content", aiSystemPrompt()),
                     Map.of("role", "user", "content", prompt)
@@ -217,7 +332,7 @@ public class AiService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(OPENAI_URL))
-                    .timeout(Duration.ofSeconds(30))
+                    .timeout(Duration.ofSeconds(45))
                     .header("Authorization", "Bearer " + openAiApiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
@@ -225,6 +340,7 @@ public class AiService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                System.err.println("[AI] OpenAI error " + response.statusCode() + ": " + response.body());
                 return "";
             }
 
@@ -233,8 +349,10 @@ public class AiService {
             return content.isTextual() ? content.asText().trim() : "";
         } catch (IOException | InterruptedException ex) {
             Thread.currentThread().interrupt();
+            System.err.println("[AI] OpenAI IO error: " + ex.getMessage());
             return "";
         } catch (Exception ex) {
+            System.err.println("[AI] OpenAI unexpected error: " + ex.getMessage());
             return "";
         }
     }
@@ -244,41 +362,59 @@ public class AiService {
             return "";
         }
 
-        try {
-            Map<String, Object> payload = Map.of(
-                    "contents", List.of(Map.of(
-                            "role", "user",
-                            "parts", List.of(Map.of("text", aiSystemPrompt() + "\n\n" + prompt))
-                    )),
-                    "generationConfig", Map.of(
-                            "temperature", 0.7,
-                            "topP", 0.95,
-                            "maxOutputTokens", 700
-                    )
-            );
+        // Try models in order of availability — flash is free-tier friendly
+        String[] modelsToTry = { geminiModel, "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro" };
 
-            String url = String.format(GEMINI_URL_TEMPLATE, geminiModel, geminiApiKey);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(30))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                    .build();
+        for (String model : modelsToTry) {
+            try {
+                Map<String, Object> payload = Map.of(
+                        "contents", List.of(Map.of(
+                                "role", "user",
+                                "parts", List.of(Map.of("text", aiSystemPrompt() + "\n\n" + prompt))
+                        )),
+                        "generationConfig", Map.of(
+                                "temperature", 0.7,
+                                "topP", 0.95,
+                                "maxOutputTokens", 2048
+                        )
+                );
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                return "";
+                String url = String.format(GEMINI_URL_TEMPLATE, model, geminiApiKey);
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .timeout(Duration.ofSeconds(45))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                        .build();
+
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() == 404 || response.statusCode() == 400) {
+                    // Model not found or bad request — try next model
+                    System.err.println("[AI] Gemini model " + model + " returned " + response.statusCode() + ", trying next...");
+                    continue;
+                }
+
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    System.err.println("[AI] Gemini error " + response.statusCode() + ": " + response.body());
+                    continue;
+                }
+
+                JsonNode root = objectMapper.readTree(response.body());
+                JsonNode text = root.path("candidates").path(0).path("content").path("parts").path(0).path("text");
+                if (text.isTextual() && !text.asText().isBlank()) {
+                    return text.asText().trim();
+                }
+
+            } catch (IOException | InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                System.err.println("[AI] Gemini IO error with model " + model + ": " + ex.getMessage());
+            } catch (Exception ex) {
+                System.err.println("[AI] Gemini unexpected error with model " + model + ": " + ex.getMessage());
             }
-
-            JsonNode root = objectMapper.readTree(response.body());
-            JsonNode text = root.path("candidates").path(0).path("content").path("parts").path(0).path("text");
-            return text.isTextual() ? text.asText().trim() : "";
-        } catch (IOException | InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            return "";
-        } catch (Exception ex) {
-            return "";
         }
+
+        return "";
     }
 
     private String aiSystemPrompt() {

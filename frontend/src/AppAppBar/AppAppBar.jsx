@@ -24,6 +24,7 @@ import BookingIcon from '@mui/icons-material/EventNote';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PersonIcon from '@mui/icons-material/Person';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import { useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { setUserData } from '../Store/UserDataSlice';
@@ -199,6 +200,7 @@ const NAV_LINKS = [
   { label: 'Flights', path: '/flights',    icon: <FlightIcon /> },
   { label: 'Hotels',  path: '/hotels',     icon: <HotelIcon /> },
   { label: 'Cars',    path: '/cars',       icon: <DirectionsCarIcon /> },
+  { label: 'Trip Planner', path: '/trip-planner', icon: <TravelExploreIcon /> },
   { label: 'Find',    path: '/createpost',  icon: <AddIcon /> },
   { label: 'Community',   path: '/posts',      icon: <VideoLibraryIcon /> },
 ];

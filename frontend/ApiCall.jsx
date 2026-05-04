@@ -491,3 +491,14 @@ export const GetTravelInsights = async() => {
         return error.response
     }
 }
+
+export const PlanTrip = async(tripPlanRequest) => {
+    try {
+        const response = await api.post('ai/trip-planner', tripPlanRequest, {
+            withCredentials: true
+        });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+}

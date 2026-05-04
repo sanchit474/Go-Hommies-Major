@@ -169,10 +169,32 @@ const parseCsv = (value) =>
     .map((entry) => entry.trim())
     .filter(Boolean);
 
+const normalizeDateInput = (value) => {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const ddMmYyyy = value.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+  if (ddMmYyyy) {
+    const [, dd, mm, yyyy] = ddMmYyyy;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  return "";
+};
+
 const toFormState = (profile) => ({
   ...emptyProfile,
   ...profile,
   coverPhotoUrl: profile?.coverPhotoUrl || profile?.coverImage || profile?.coverPhoto || "",
+  birthday: normalizeDateInput(profile?.birthday),
   age: profile?.age ?? "",
   interests: listToText(profile?.interests),
   languages: listToText(profile?.languages),
@@ -266,28 +288,27 @@ const UserProfile = () => {
       URL.revokeObjectURL(previewUrl);
     }
     setPreviewUrl(URL.createObjectURL(file));
+    // Auto-upload immediately after selection
+    handleUploadPhotoFile(file);
   };
 
-  const handleUploadPhoto = async () => {
-    if (!selectedFile) {
-      setSnackbar({ open: true, message: "Choose a profile photo first.", severity: "warning" });
-      return;
-    }
+  const handleUploadPhotoFile = async (file) => {
+    if (!file) return;
 
     setUploading(true);
-    const response = await UploadProfileImage(selectedFile);
+    const response = await UploadProfileImage(file);
 
     if (response?.status === 200 && response.data?.imageUrl) {
-      const nextProfile = {
-        ...profile,
-        imageUrl: response.data.imageUrl,
-      };
-      setProfile(nextProfile);
-      setDraft((current) => ({ ...current, imageUrl: response.data.imageUrl }));
+      const imageUrl = response.data.imageUrl;
+      setProfile((prev) => ({ ...prev, imageUrl }));
+      setDraft((prev) => ({ ...prev, imageUrl }));
       setSelectedFile(null);
       setPreviewUrl("");
       setSnackbar({ open: true, message: "Profile photo updated.", severity: "success" });
     } else {
+      // Upload failed — clear the preview so stale blob isn't shown
+      setSelectedFile(null);
+      setPreviewUrl("");
       setSnackbar({
         open: true,
         message: response?.data?.message || response?.data?.msg || "Photo upload failed.",
@@ -296,6 +317,10 @@ const UserProfile = () => {
     }
 
     setUploading(false);
+  };
+
+  const handleUploadPhoto = async () => {
+    await handleUploadPhotoFile(selectedFile);
   };
 
   const handleCoverFileChange = (event) => {
@@ -357,7 +382,7 @@ const UserProfile = () => {
       phone: draft.phone?.trim(),
       address: draft.address?.trim(),
       gender: draft.gender?.trim(),
-      birthday: draft.birthday || undefined,
+      birthday: normalizeDateInput(draft.birthday) || undefined,
       bio: draft.bio?.trim(),
       location: draft.location?.trim(),
       age: draft.age === "" ? undefined : Number(draft.age),

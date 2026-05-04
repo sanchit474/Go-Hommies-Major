@@ -13,6 +13,7 @@ import Booking from "../Pages/BookingPage/Booking";
 import Flights from "../Pages/FlightsPage/Flights";
 import Hotels from "../Pages/HotelsPage/Hotels";
 import Cars from "../Pages/CarsPage/Cars";
+import TripPlanner from "../Pages/TripPlanner/TripPlanner";
 import PostCreationSection from "../Components/LandingPage/PostCreationSection";
 
 const Routers = createBrowserRouter([
@@ -55,6 +56,10 @@ const Routers = createBrowserRouter([
             {
                 path:'/cars',
                 element:<Cars/>
+            },
+            {
+                path:'/trip-planner',
+                element:<TripPlanner/>
             },
             {
                 path: '/about_us',

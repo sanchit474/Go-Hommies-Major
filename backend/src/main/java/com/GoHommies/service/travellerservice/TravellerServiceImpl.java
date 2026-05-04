@@ -2,6 +2,9 @@ package com.GoHommies.service.travellerservice;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -74,7 +77,10 @@ public class TravellerServiceImpl implements TravellerService {
             } catch (IllegalArgumentException ignored) {}
         }
         if (dto.getBirthday() != null && !dto.getBirthday().isBlank()) {
-            patient.setBirthday(LocalDate.parse(dto.getBirthday()));
+            LocalDate parsedBirthday = parseBirthday(dto.getBirthday());
+            if (parsedBirthday != null) {
+                patient.setBirthday(parsedBirthday);
+            }
         }
         
         // Travel-related fields
@@ -109,14 +115,37 @@ public class TravellerServiceImpl implements TravellerService {
                 .build();
     }
 
+    private LocalDate parseBirthday(String input) {
+        List<DateTimeFormatter> formats = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ofPattern("MM-dd-yyyy"),
+                DateTimeFormatter.ofPattern("MM/dd/yyyy")
+        );
+
+        for (DateTimeFormatter formatter : formats) {
+            try {
+                return LocalDate.parse(input, formatter);
+            } catch (DateTimeParseException ignored) {
+                // Try next format.
+            }
+        }
+
+        return null;
+    }
+
     @Override
     public String uploadProfileImage(String email, MultipartFile file) {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
         Traveller patient = travellerRepository.findByUser(user)
-                .orElse(Traveller.builder().user(user).build());
+                .orElseGet(() -> {
+                    Traveller newTraveller = Traveller.builder().user(user).build();
+                    return travellerRepository.save(newTraveller);
+                });
         try {
-            String url = cloudinaryService.uploadImage(file, "qcare/patients");
+            String url = cloudinaryService.uploadImage(file, "gohommies/profiles");
             patient.setProfileUrl(url);
             patient.setIsProfileComplete(true);
             travellerRepository.save(patient);
