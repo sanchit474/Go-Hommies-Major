@@ -14,8 +14,10 @@ import com.GoHommies.dto.loginDto.AuthRequest;
 import com.GoHommies.dto.loginDto.AuthResponse;
 import com.GoHommies.dto.signupDto.RegisterRequest;
 import com.GoHommies.dto.signupDto.RegisterResponse;
+import com.GoHommies.entity.Provider;
 import com.GoHommies.entity.UserEntity;
 import com.GoHommies.entity.UserEntity.Role;
+import com.GoHommies.repository.ProviderRepository;
 import com.GoHommies.repository.UserRepository;
 import com.GoHommies.service.authservice.AuthenticationService;
 import com.GoHommies.service.userdetailservice.AppUserDetailService;
@@ -35,6 +37,7 @@ public class ServiceProviderAuthController {
 
     private final AuthenticationService authenticationService;
     private final UserRepository userRepository;
+    private final ProviderRepository providerRepository;
     private final JwtUtils jwtUtils;
     private final AppUserDetailService appUserDetailService;
     private final PasswordEncoder passwordEncoder;
@@ -59,7 +62,7 @@ public class ServiceProviderAuthController {
     }
 
     /**
-     * Service Provider Registration - Creates a new SERVICEPROVIDER user
+     * Service Provider Registration - Creates a new SERVICEPROVIDER user AND a Provider profile
      */
     @PostMapping("/register")
     public RegisterResponse serviceProviderRegister(@Valid @RequestBody RegisterRequest request) {
@@ -74,10 +77,16 @@ public class ServiceProviderAuthController {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.SERVICEPROVIDER)
-                .accountVerified(true) // Service providers are auto-verified
+                .accountVerified(true)
                 .build();
 
         userRepository.save(newServiceProvider);
+
+        // Create the Provider profile linked to this user
+        Provider provider = new Provider();
+        provider.setUser(newServiceProvider);
+        provider.setDisplayName(request.getName());
+        providerRepository.save(provider);
 
         // Generate JWT token for immediate login
         UserDetails userDetails = appUserDetailService.loadUserByUsername(request.getEmail());

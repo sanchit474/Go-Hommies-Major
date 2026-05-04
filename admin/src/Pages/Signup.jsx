@@ -84,7 +84,7 @@ const Signup = () => {
 
     try {
       const response = await apiInstance.post('serviceprovider/register', {
-        fullName: formData.name,
+        name: formData.name,
         email: formData.email,
         password: formData.password,
       });

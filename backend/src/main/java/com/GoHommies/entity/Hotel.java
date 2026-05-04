@@ -38,7 +38,7 @@ public class Hotel {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "provider_id", nullable = false)
+    @JoinColumn(name = "provider_user_id", nullable = false)
     private Provider provider;
 
     @Column(nullable = false)

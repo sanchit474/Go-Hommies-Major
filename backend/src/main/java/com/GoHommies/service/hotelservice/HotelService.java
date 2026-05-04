@@ -15,6 +15,7 @@ public interface HotelService {
     HotelResponseDto getHotelById(Long hotelId);
     List<HotelResponseDto> getPublicHotels();
     List<HotelResponseDto> getMyHotels(String providerEmail);
+    void deleteHotel(String providerEmail, Long hotelId);
 
     HotelBookingResponseDto createBooking(String travellerEmail, Long hotelId, CreateHotelBookingDto dto);
     java.util.List<HotelBookingResponseDto> getMyBookings(String travellerEmail);

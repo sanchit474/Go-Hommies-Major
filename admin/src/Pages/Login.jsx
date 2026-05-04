@@ -34,17 +34,20 @@ const Login = () => {
         throw new Error(`Invalid credentials. Only ${expectedRole} can login here.`);
       }
 
+      // Normalise role to match ProtectedRoute expectations
+      const storedRole = loginType === 'admin' ? 'admin' : 'service_provider';
+
       dispatch(
         loginSuccess({
-          id: null, // Backend doesn't return ID in auth response
+          id: null,
           email: userEmail,
           name: name,
-          role: loginType,
+          role: storedRole,
           token,
         })
       );
 
-      navigate(loginType === 'admin' ? '/dashboard' : '/provider');
+      navigate(storedRole === 'admin' ? '/dashboard' : '/provider');
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please try again.';
       setError(errorMessage);

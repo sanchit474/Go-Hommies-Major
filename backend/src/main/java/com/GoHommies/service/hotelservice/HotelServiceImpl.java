@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.GoHommies.dto.CreateHotelBookingDto;
 import com.GoHommies.dto.CreateHotelDto;
@@ -26,10 +27,10 @@ import com.GoHommies.repository.ProviderRepository;
 import com.GoHommies.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class HotelServiceImpl implements HotelService {
 
@@ -98,6 +99,14 @@ public class HotelServiceImpl implements HotelService {
     public java.util.List<HotelResponseDto> getMyHotels(String providerEmail) {
         Provider provider = getProviderByEmail(providerEmail);
         return hotelRepository.findByProviderOrderByCreatedAtDesc(provider).stream().map(this::toHotelResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteHotel(String providerEmail, Long hotelId) {
+        Provider provider = getProviderByEmail(providerEmail);
+        Hotel hotel = hotelRepository.findByIdAndProvider(hotelId, provider)
+                .orElseThrow(() -> new EntityNotFoundException("Hotel not found or unauthorized"));
+        hotelRepository.delete(hotel);
     }
 
     @Override
@@ -185,7 +194,23 @@ public class HotelServiceImpl implements HotelService {
     }
 
     private Provider getProviderByEmail(String email) {
-        return providerRepository.findByUserEmail(email).orElseThrow(() -> new EntityNotFoundException("Provider not found for user: " + email));
+        Optional<Provider> existing = providerRepository.findByUserEmail(email);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        
+        // Auto-create Provider if user exists but Provider doesn't (for legacy accounts)
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + email));
+        
+        if (user.getRole() != UserEntity.Role.SERVICEPROVIDER) {
+            throw new EntityNotFoundException("User is not a service provider: " + email);
+        }
+        
+        Provider provider = new Provider();
+        provider.setUser(user);
+        provider.setDisplayName(user.getFullName());
+        return providerRepository.save(provider);
     }
 
     private void validateHotelPayload(CreateHotelDto dto, boolean allowPartial) {

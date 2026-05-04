@@ -149,6 +149,50 @@ export const UpdateUserProfile = async(profileData)=>{
     }
 }
 
+export const GetPublicHotels = async() => {
+    try {
+        const response = await api.get('hotels/public', {
+            withCredentials: true
+        });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+}
+
+export const CreateHotelBooking = async(hotelId, bookingPayload) => {
+    try {
+        const response = await api.post(`hotels/${hotelId}/book`, bookingPayload, {
+            withCredentials: true
+        });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+}
+
+export const GetMyHotelBookings = async() => {
+    try {
+        const response = await api.get('hotels/bookings/my', {
+            withCredentials: true
+        });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+}
+
+export const CancelMyHotelBooking = async(bookingId) => {
+    try {
+        const response = await api.patch(`hotels/bookings/${bookingId}/cancel`, {}, {
+            withCredentials: true
+        });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+}
+
 export const UploadProfileImage = async(file)=>{
     try {
         const formData = new FormData();

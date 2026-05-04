@@ -36,8 +36,18 @@ public class AuthPublicController {
 
 //    controller for the signup or register user
     @PostMapping("/register")
-    public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
-        return profileService.register(request);
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        try {
+            RegisterResponse response = profileService.register(request);
+            return ResponseEntity.ok(response);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(Map.of("message", e.getReason(), "msg", e.getReason()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Registration failed: " + e.getMessage(), "msg", "Registration failed: " + e.getMessage()));
+        }
     }
     // Inside ProfileController.java
     @PostMapping("/verify-otp")
