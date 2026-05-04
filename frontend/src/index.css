@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3B82F6;
+  --color-secondary: #10B981;
+  --color-accent: #F59E0B;
+  --color-bg-dark: #0F172A;
+  --color-glass: rgba(255, 255, 255, 0.1);
+  --color-glass-dark: rgba(0, 0, 0, 0.3);
+  
+  --font-sans: 'Inter', 'Poppins', sans-serif;
+}
+
+:root {
+  --primary: #3B82F6;
+  --secondary: #10B981;
+  --accent: #F59E0B;
+  --bg-dark: #0F172A;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+/* Carousel styles */
+.header_carousel .swiper-slide {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+.header_carousel .swiper-pagination {
+  text-align: right;
+  position: absolute;
+  right: 10px !important; 
+  left: auto !important;
+  top: 20px !important;
+  z-index: 100;
+  display: flex;
+  gap: .5rem;
+}
+
+.header_carousel .swiper-pagination-bullet {
+  display: flex;
+  width: 50px !important; 
+  height: 4px !important;
+  border-radius: 0px !important;
+  background-color: rgba(0,0,0,0.5) !important;
+}
+
+.header_carousel .swiper-pagination-bullet-active {
+  background-color: var(--primary) !important;
+}
+
+/* Hide scrollbar */
+.custom-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-scrollbar-hide {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;    
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Modern Card Effect */
+.modern-card {
+  @apply bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300;
+}
+
+.glass-effect {
+  @apply backdrop-blur-md bg-white/70 border border-white/20;
+}
