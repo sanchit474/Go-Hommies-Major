@@ -19,7 +19,7 @@ jwt:
   expiration:
     ms: 36000000
   secret:
-    key: '#Q*19zZnKGD4m1K*zhAhg/nYqxFAxpKiHnXMD0h6xYc=BNA4lNva0#uoEkX7uTBaws79UQrdJ&Vqii6QP5ALnkAcwFcbd4ignoqgyzzZYOZS5VdSodBg9Jf!YtsJc#oo'
+    key: ${JWT_SECRET_KEY:dev-only-change-this-jwt-secret-key-minimum-32-bytes}
 
 management:
   endpoints:
