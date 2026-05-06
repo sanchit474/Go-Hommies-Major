@@ -55,6 +55,8 @@ public class Notification {
         JOIN_REQUEST_REJECTED,  // Trip owner rejects User A's request
         TRIP_UPDATED,           // Trip details changed
         NEW_MEMBER_JOINED,      // New member approved to trip
-        MEMBER_LEFT             // Member left the trip
+        MEMBER_LEFT,            // Member left the trip
+        POST_LIKED,             // Someone liked your trip post
+        POST_COMMENTED          // Someone commented on your trip post
     }
 }

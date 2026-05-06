@@ -3,6 +3,7 @@ package com.GoHommies.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,4 +29,10 @@ public class TripResponseDto {
     private String creatorProfileUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // ── Social ──────────────────────────────────────────────
+    private Integer likeCount;
+    private List<String> likedByEmails;   // so frontend can check if current user liked
+    private Long commentCount;
+    private List<TripCommentDto> comments;
 }

@@ -253,4 +253,39 @@ public class TripController {
         tripMemberService.leaveTrip(tripId, principal.getName());
         return ResponseEntity.noContent().build();
     }
+
+    // ─────────────────────────────────────────────────────────
+    // LIKE / UNLIKE / COMMENT
+    // ─────────────────────────────────────────────────────────
+
+    /** POST /api/trips/{tripId}/like */
+    @PostMapping("/{tripId}/like")
+    public ResponseEntity<com.GoHommies.dto.TripResponseDto> likeTrip(
+            @PathVariable Long tripId, Principal principal) {
+        return ResponseEntity.ok(tripService.likeTrip(tripId, principal.getName()));
+    }
+
+    /** DELETE /api/trips/{tripId}/like */
+    @DeleteMapping("/{tripId}/like")
+    public ResponseEntity<com.GoHommies.dto.TripResponseDto> unlikeTrip(
+            @PathVariable Long tripId, Principal principal) {
+        return ResponseEntity.ok(tripService.unlikeTrip(tripId, principal.getName()));
+    }
+
+    /** POST /api/trips/{tripId}/comments */
+    @PostMapping("/{tripId}/comments")
+    public ResponseEntity<com.GoHommies.dto.TripCommentDto> addComment(
+            @PathVariable Long tripId,
+            @RequestBody java.util.Map<String, String> body,
+            Principal principal) {
+        String text = body == null ? "" : body.getOrDefault("text", "");
+        return ResponseEntity.status(201).body(tripService.addComment(tripId, principal.getName(), text));
+    }
+
+    /** GET /api/trips/{tripId}/comments */
+    @GetMapping("/{tripId}/comments")
+    public ResponseEntity<java.util.List<com.GoHommies.dto.TripCommentDto>> getComments(
+            @PathVariable Long tripId) {
+        return ResponseEntity.ok(tripService.getComments(tripId));
+    }
 }

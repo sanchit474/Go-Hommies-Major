@@ -29,6 +29,7 @@ import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
 import EditIcon from "@mui/icons-material/Edit";
 import { GetMyTrips, GetUserProfile, UpdateUserProfile, UploadProfileImage } from "../../../ApiCall";
 import { useNavigate } from "react-router-dom";
+import NotificationsCard from "./NotificationsCard";
 
 const HERO_IMAGE = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80";
 
@@ -855,6 +856,8 @@ const UserProfile = () => {
               {tab !== 1 ? (
                 <Grid item xs={12} lg={4}>
                   <Stack spacing={2.5}>
+                    <NotificationsCard />
+
                     <DisplayCard>
                       <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
                         <Stack spacing={1.5}>

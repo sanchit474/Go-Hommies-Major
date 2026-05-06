@@ -9,8 +9,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -63,6 +66,23 @@ public class Trip {
     @Builder.Default
     @Column(nullable = false)
     private Boolean isPublic = false;
+
+    // ── Likes ──────────────────────────────────────────────
+    @Builder.Default
+    @Column(name = "like_count", nullable = false)
+    private Integer likeCount = 0;
+
+    @Builder.Default
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "trip_likes", joinColumns = @JoinColumn(name = "trip_id"))
+    @Column(name = "user_email", length = 255)
+    private java.util.List<String> likedByEmails = new java.util.ArrayList<>();
+
+    // ── Comments ───────────────────────────────────────────
+    @Builder.Default
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @jakarta.persistence.OrderBy("createdAt DESC")
+    private java.util.List<com.GoHommies.entity.TripComment> comments = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TripJoinRequest> joinRequests;

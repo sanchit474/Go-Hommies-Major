@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { setUserData } from '../Store/UserDataSlice';
 import Cookies from 'js-cookie';
+import NotificationBell from '../Components/Notifications/NotificationBell';
 
 /* ─── GoHomies Logo ─────────────────────────────────────── */
 const GoHomiesLogo = ({ size = 34 }) => (
@@ -297,6 +298,7 @@ export default function AppAppBar() {
                 </>
               ) : (
                 <>
+                  <NotificationBell />
                   <Button variant="outlined" sx={USER_BTN} onClick={() => navigate('/userprofile')}
                     startIcon={<AvatarChip name={userData?.name} />}>
                     {firstName}

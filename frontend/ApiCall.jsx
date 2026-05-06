@@ -254,7 +254,10 @@ const mapTripToPostCardModel = (trip) => {
         totalPersons: trip?.totalPersons || 0,
         createdAt: trip?.createdAt,
         interested_persons: [],
-        likeCount: 0,
+        likeCount: trip?.likeCount || 0,
+        likedByEmails: trip?.likedByEmails || [],
+        commentCount: trip?.commentCount || 0,
+        comments: trip?.comments || [],
         image: trip?.imageUrl || '',
         tripId: trip?.id,
     };
@@ -373,7 +376,7 @@ export const FetchVlogs = async() => {
 
 export const LikePost = async(postId) => {
     try {
-        const response = await api.post(`post/like/${postId}`, {}, {
+        const response = await api.post(`trips/${postId}/like`, {}, {
             withCredentials: true
         })
         return response
@@ -384,7 +387,7 @@ export const LikePost = async(postId) => {
 
 export const UnlikePost = async(postId) => {
     try {
-        const response = await api.post(`post/unlike/${postId}`, {}, {
+        const response = await api.delete(`trips/${postId}/like`, {
             withCredentials: true
         })
         return response
@@ -395,7 +398,18 @@ export const UnlikePost = async(postId) => {
 
 export const CommentOnPost = async(postId, comment) => {
     try {
-        const response = await api.post(`post/comment/${postId}`, { comment }, {
+        const response = await api.post(`trips/${postId}/comments`, { text: comment }, {
+            withCredentials: true
+        })
+        return response
+    } catch (error) {
+        return error.response
+    }
+}
+
+export const GetPostComments = async(postId) => {
+    try {
+        const response = await api.get(`trips/${postId}/comments`, {
             withCredentials: true
         })
         return response
@@ -491,6 +505,73 @@ export const GetTravelInsights = async() => {
         return error.response
     }
 }
+
+// ─── Notification API ────────────────────────────────────────────────────────
+
+export const GetMyNotifications = async () => {
+    try {
+        const response = await api.get('traveller/notifications', { withCredentials: true });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+};
+
+export const GetUnreadNotificationCount = async () => {
+    try {
+        const response = await api.get('traveller/notifications/unread/count', { withCredentials: true });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+};
+
+export const MarkNotificationRead = async (notificationId) => {
+    try {
+        const response = await api.put(`traveller/notifications/${notificationId}/read`, {}, { withCredentials: true });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+};
+
+export const MarkAllNotificationsRead = async () => {
+    try {
+        const response = await api.put('traveller/notifications/read-all', {}, { withCredentials: true });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+};
+
+export const DeleteNotification = async (notificationId) => {
+    try {
+        const response = await api.delete(`traveller/notifications/${notificationId}`, { withCredentials: true });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+};
+
+// ─── Join Request Actions (from notification) ─────────────────────────────────
+
+export const ApproveJoinRequest = async (tripId, requestId) => {
+    try {
+        const response = await api.put(`trips/${tripId}/join-requests/${requestId}/approve`, {}, { withCredentials: true });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+};
+
+export const RejectJoinRequest = async (tripId, requestId) => {
+    try {
+        const response = await api.put(`trips/${tripId}/join-requests/${requestId}/reject`, {}, { withCredentials: true });
+        return response;
+    } catch (error) {
+        return error.response;
+    }
+};
 
 export const PlanTrip = async(tripPlanRequest) => {
     try {

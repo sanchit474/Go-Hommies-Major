@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class NotificationDto {
     private Long id;
     private Long tripId;
+    private Long joinRequestId;   // present when type = JOIN_REQUEST_SENT
     private String senderName;
     private String senderProfileUrl;
     private NotificationType type;

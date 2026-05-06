@@ -3,7 +3,7 @@ import { MapPin, Tag, Calendar, Users, Heart, MessageCircle, Share2 } from "luci
 import timeAgo from "../TimeStamp/timeAgo";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
-import { PostImages, LikePost, UnlikePost, CommentOnPost, OptInToPost, OptOutFromPost, UpdateTrip, DeleteTrip } from "../../../ApiCall";
+import { PostImages, LikePost, UnlikePost, CommentOnPost, GetPostComments, OptInToPost, OptOutFromPost, UpdateTrip, DeleteTrip } from "../../../ApiCall";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { updatePost } from "../../Store/AllPostsSlice";
@@ -132,9 +132,11 @@ const PostCard = (props) => {
 
   const [images, setImages] = useState([]);
   const [likeCount, setLikeCount] = useState(props.likeCount || 0);
-  const [isLiked, setIsLiked] = useState(props.likes?.includes(props.user?._id) || false);
+  const [isLiked, setIsLiked] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState(props.comments || []);
+  const [commentCount, setCommentCount] = useState(props.commentCount || props.comments?.length || 0);
   const [isCommentingLoading, setIsCommentingLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -145,11 +147,7 @@ const PostCard = (props) => {
   const [tripBudget, setTripBudget] = useState(budget || "");
   const [tripTotalPersons, setTripTotalPersons] = useState(totalPersons || "");
   const [tripDescription, setTripDescription] = useState(desc || "");
-  const profileImageSrc =
-    props?.user?.profilePic ||
-    props?.user?.profileUrl ||
-    props?.user?.imageUrl ||
-    "https://media.licdn.com/dms/image/v2/D4D03AQF34X7QsXcp9w/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1696980839339?e=1750291200&v=beta&t=yzKjXfViRYphtcwEpnKW8koJFqf3EkV_5rtPFADNbnQ";
+  // Determine if current user has liked this post
   const loggedInEmail = (() => {
     if (props?.currentUserEmail) return props.currentUserEmail;
     try {
@@ -161,7 +159,24 @@ const PostCard = (props) => {
       return "";
     }
   })();
+
+  // Sync isLiked from props on mount
+  useEffect(() => {
+    if (props.likedByEmails && loggedInEmail) {
+      setIsLiked(props.likedByEmails.includes(loggedInEmail));
+    }
+    if (props.likeCount !== undefined) setLikeCount(props.likeCount);
+    if (props.comments) { setComments(props.comments); setCommentCount(props.comments.length); }
+    if (props.commentCount !== undefined) setCommentCount(props.commentCount);
+  }, [props.likedByEmails, props.likeCount, props.comments, props.commentCount]);
+
   const isOwner = Boolean(loggedInEmail && props?.user?.email && loggedInEmail === props.user.email);
+
+  const profileImageSrc =
+    props?.user?.profilePic ||
+    props?.user?.profileUrl ||
+    props?.user?.imageUrl ||
+    "https://ui-avatars.com/api/?name=" + encodeURIComponent(props?.user?.name || 'U') + "&background=6B8E23&color=fff";
 
   const handleLikeToggle = async () => {
     try {
@@ -169,13 +184,13 @@ const PostCard = (props) => {
         const response = await UnlikePost(postId);
         if (response?.status === 200) {
           setIsLiked(false);
-          setLikeCount(Math.max(0, likeCount - 1));
+          setLikeCount((c) => Math.max(0, c - 1));
         }
       } else {
         const response = await LikePost(postId);
         if (response?.status === 200) {
           setIsLiked(true);
-          setLikeCount(likeCount + 1);
+          setLikeCount((c) => c + 1);
         }
       }
     } catch (error) {
@@ -185,13 +200,14 @@ const PostCard = (props) => {
 
   const handleCommentSubmit = async () => {
     if (!commentText.trim()) return;
-
     setIsCommentingLoading(true);
     try {
       const response = await CommentOnPost(postId, commentText);
-      if (response?.status === 200) {
+      if (response?.status === 200 || response?.status === 201) {
+        const newComment = response.data;
+        setComments((prev) => [newComment, ...prev]);
+        setCommentCount((c) => c + 1);
         setCommentText('');
-        setShowCommentForm(false);
       }
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -544,20 +560,16 @@ const PostCard = (props) => {
           >
             <Heart
               size={24}
-              className={isLiked ? "fill-red-500 text-red-500" : "text-[#57585c]"}
+              className={isLiked ? "fill-red-500 text-red-500 transition-transform scale-110" : "text-[#57585c] transition-transform"}
             />
-            <p className="">{likeCount}</p>
+            <p className="text-sm font-semibold">{likeCount > 0 ? likeCount : ''}</p>
           </button>
           <button className="flex flex-1 gap-[6px] max-w-[192px] xxl:w-[144px] h-[40px] text-center justify-center lg:flex-row flex-col items-center py-[8px] hover:bg-[#d7d7d8] rounded-md"
             onClick={() => setShowCommentForm(!showCommentForm)}
           >
-            <MessageCircle size={24} className="text-[#57585c]" />
-            <p className="">Comment</p>
+            <MessageCircle size={24} className={showCommentForm ? "text-blue-500" : "text-[#57585c]"} />
+            <p className="text-sm font-semibold">{commentCount > 0 ? commentCount : ''}</p>
           </button>
-          {/* <button className='flex flex-1 gap-[6px] max-w-[144px] xxl:w-[144px] h-[40px] text-center justify-center lg:flex-row flex-col items-center py-[8px] hover:bg-[#d7d7d8] rounded-md '>
-          <p className='text-[#57585c]'><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" clipRule="evenodd" d="M7.81498 2C4.17498 2 2.00498 4.17 2.00498 7.81V16.18C2.00498 19.83 4.17498 22 7.81498 22H16.185C19.825 22 21.995 19.83 21.995 16.19V7.81C22.005 4.17 19.835 2 16.195 2H7.81498ZM17.035 16.18L15.345 17.87C15.195 18.02 15.005 18.09 14.815 18.09C14.625 18.09 14.435 18.02 14.285 17.87C13.995 17.58 13.995 17.1 14.285 16.81L14.695 16.4H9.10498C7.80498 16.4 6.75498 15.34 6.75498 14.05V12.28C6.75498 11.87 7.09498 11.53 7.50498 11.53C7.91498 11.53 8.25498 11.87 8.25498 12.28V14.05C8.25498 14.52 8.63498 14.9 9.10498 14.9H14.695L14.285 14.49C13.995 14.2 13.995 13.72 14.285 13.43C14.575 13.14 15.055 13.14 15.345 13.43L17.035 15.12C17.105 15.19 17.155 15.27 17.195 15.36C17.275 15.55 17.275 15.76 17.195 15.94C17.155 16.03 17.105 16.11 17.035 16.18ZM16.505 12.4698C16.095 12.4698 15.755 12.1298 15.755 11.7198V9.94984C15.755 9.47984 15.375 9.09984 14.905 9.09984H9.31498L9.72498 9.49984C10.015 9.78984 10.015 10.2698 9.72498 10.5598C9.57498 10.7098 9.38498 10.7798 9.19498 10.7798C9.00498 10.7798 8.81498 10.7098 8.66498 10.5598L6.97498 8.86984C6.90498 8.79984 6.85498 8.71984 6.81498 8.62984C6.73498 8.44984 6.73498 8.23984 6.81498 8.05984C6.85498 7.96984 6.90498 7.87984 6.97498 7.80984L8.66498 6.11984C8.95498 5.82984 9.43498 5.82984 9.72498 6.11984C10.015 6.40984 10.015 6.88984 9.72498 7.17984L9.31498 7.58984H14.905C16.205 7.58984 17.255 8.64984 17.255 9.93984V11.7198C17.255 12.1298 16.915 12.4698 16.505 12.4698Z" fill=" #57585C"></path></svg></p>
-          <p className=''>Repost</p>
-        </button> */}
           <button className="flex flex-1 gap-[6px] max-w-[192px] xxl:w-[144px] h-[40px] text-center justify-center lg:flex-row flex-col items-center py-[8px] hover:bg-[#d7d7d8] rounded-md"
             onClick={handleShare}
           >
@@ -566,26 +578,41 @@ const PostCard = (props) => {
           </button>
         </div>
         {showCommentForm && (
-          <div className="px-6 py-4 border-t border-[#d7d7d8] flex gap-2">
-            <input
-              type="text"
-              placeholder="Add a comment..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleCommentSubmit();
-                }
-              }}
-              className="flex-1 px-3 py-2 border border-[#d7d7d8] rounded-lg focus:outline-none focus:border-blue-500"
-            />
-            <button
-              onClick={handleCommentSubmit}
-              disabled={isCommentingLoading}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
-            >
-              {isCommentingLoading ? 'Posting...' : 'Post'}
-            </button>
+          <div className="px-6 py-3 border-t border-[#d7d7d8]">
+            {/* Comment input */}
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCommentSubmit(); }}
+                className="flex-1 px-3 py-2 border border-[#d7d7d8] rounded-full text-sm focus:outline-none focus:border-blue-500"
+              />
+              <button
+                onClick={handleCommentSubmit}
+                disabled={isCommentingLoading || !commentText.trim()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {isCommentingLoading ? '...' : 'Post'}
+              </button>
+            </div>
+            {/* Comments list */}
+            {comments.length > 0 && (
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {comments.map((c, idx) => (
+                  <div key={c.id || idx} className="flex gap-2 items-start">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {c.authorName ? c.authorName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="flex-1 bg-[#f3f4f6] rounded-2xl px-3 py-2">
+                      <p className="text-xs font-semibold text-gray-800">{c.authorName || 'User'}</p>
+                      <p className="text-sm text-gray-700 mt-0.5">{c.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         

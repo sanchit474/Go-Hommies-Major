@@ -163,6 +163,7 @@ public class NotificationServiceImpl implements NotificationService {
         return NotificationDto.builder()
                 .id(notification.getId())
                 .tripId(notification.getTrip() != null ? notification.getTrip().getId() : null)
+                .joinRequestId(notification.getJoinRequestId())
                 .senderName(notification.getSender() != null ? 
                         notification.getSender().getUser().getFullName() : "System")
                 .senderProfileUrl(notification.getSender() != null ? 

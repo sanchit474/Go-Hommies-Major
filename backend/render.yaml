@@ -1,0 +1,109 @@
+services:
+  - type: web
+    name: gohomies-backend
+    env: java
+    plan: standard
+    buildCommand: mvn clean package -DskipTests -q
+    startCommand: java -jar target/QCare-0.0.1-SNAPSHOT.jar --server.port=$PORT
+    
+    # Environment variables
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      
+      - key: PORT
+        value: 10000
+      
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: gohomies-db
+          property: connectionString
+      
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      
+      - key: JWT_SECRET_KEY
+        sync: false
+      
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
+      
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      
+      - key: OPENAI_API_KEY
+        sync: false
+      
+      - key: GEMINI_API_KEY
+        sync: false
+      
+      - key: APP_CORS_ALLOWED_ORIGINS
+        sync: false
+      
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      
+      - key: MAIL_PORT
+        value: "587"
+      
+      - key: MAIL_USERNAME
+        sync: false
+      
+      - key: MAIL_PASSWORD
+        sync: false
+      
+      - key: MAIL_FROM
+        sync: false
+      
+      - key: LOGGING_LEVEL_ROOT
+        value: WARN
+      
+      - key: LOGGING_LEVEL_COM_GOHOMMIES
+        value: INFO
+      
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: validate
+      
+      - key: FLYWAY_ENABLED
+        value: "false"
+
+    # Health check endpoint
+    healthCheckPath: /api/actuator/health
+    
+    # Auto-deploy on push
+    autoDeploy: true
+    
+    # HTTP routes
+    routes:
+      - path: /
+        matchType: prefix
+    
+    # Max instances for scaling
+    maxInstances: 3
+    
+    # Min instances
+    minInstances: 1
+
+# Optional: PostgreSQL Database (if not using external TiDB)
+# Uncomment this if you want Render to manage the database
+# databases:
+#   - name: gohomies-db
+#     engine: postgres
+#     version: "15"
+#     plan: standard
+#     initializer:
+#       source:
+#         type: repo
+#         repo: https://github.com/yourusername/gohomies
+#         branch: main
+#         path: backend/src/main/resources/db/migration
+#     ipAllowList: []

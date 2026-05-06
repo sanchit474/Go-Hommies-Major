@@ -100,4 +100,42 @@ public class NotificationTriggerService {
                 null
         );
     }
+
+    /**
+     * Called when someone likes a trip post
+     * Notifies: Trip owner (sender = liker)
+     */
+    public void notifyPostLiked(Long tripOwnerId, Long likerId, Long tripId,
+                                String likerName, String destination) {
+        String message = likerName + " liked your trip post to " + destination + "!";
+        notificationService.createNotification(
+                tripOwnerId,
+                likerId,
+                tripId,
+                NotificationType.POST_LIKED,
+                message,
+                null
+        );
+    }
+
+    /**
+     * Called when someone comments on a trip post
+     * Notifies: Trip owner (sender = commenter)
+     */
+    public void notifyPostCommented(Long tripOwnerId, Long commenterId, Long tripId,
+                                    String commenterName, String destination, String commentPreview) {
+        String preview = commentPreview != null && commentPreview.length() > 40
+                ? commentPreview.substring(0, 40) + "…"
+                : commentPreview;
+        String message = commenterName + " commented on your trip to " + destination
+                + (preview != null ? ": \"" + preview + "\"" : ".");
+        notificationService.createNotification(
+                tripOwnerId,
+                commenterId,
+                tripId,
+                NotificationType.POST_COMMENTED,
+                message,
+                null
+        );
+    }
 }
